@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CBC Mining</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: #f4f7fb;
+      color: #172033;
+    }
+
+    .app {
+      max-width: 480px;
+      margin: auto;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .header {
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    .logo {
+      width: 75px;
+      height: 75px;
+      border-radius: 50%;
+      background: #172033;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: auto;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .header h1 {
+      margin-top: 12px;
+      font-size: 28px;
+    }
+
+    .header p {
+      color: #777;
+      margin-top: 5px;
+    }
+
+    .balance-card {
+      background: #172033;
+      color: white;
+      border-radius: 20px;
+      padding: 25px;
+      text-align: center;
+      margin-bottom: 18px;
+    }
+
+    .balance-card small {
+      opacity: 0.8;
+    }
+
+    .balance {
+      font-size: 36px;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+
+    .rate {
+      font-size: 15px;
+      opacity: 0.85;
+    }
+
+    .mining-card {
+      background: white;
+      border-radius: 20px;
+      padding: 22px;
+      text-align: center;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.06);
+    }
+
+    .status {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+
+    .timer {
+      font-size: 30px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 15px;
+      width: 100%;
+      font-size: 17px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .mine-btn {
+      background: #172033;
+      color: white;
+    }
+
+    .mine-btn:disabled {
+      background: #aaa;
+    }
+
+    .claim-btn {
+      background: #e8eef7;
+      color: #172033;
+      margin-top: 10px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .stat {
+      background: white;
+      padding: 18px;
+      border-radius: 15px;
+      text-align: center;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 20px;
+      margin-bottom: 5px;
+    }
+
+    .referral {
+      background: white;
+      margin-top: 18px;
+      padding: 20px;
+      border-radius: 18px;
+    }
+
+    .referral h3 {
+      margin-bottom: 10px;
+    }
+
+    .referral p {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .ref-link {
+      background: #f1f3f6;
+      padding: 12px;
+      border-radius: 10px;
+      word-break: break-all;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    .copy-btn {
+      background: #172033;
+      color: white;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 25px 0;
+      color: #999;
+      font-size: 13px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <div class="header">
+    <div class="logo">CBC</div>
+    <h1>CBC Mining</h1>
+    <p>Mine CBC every day</p>
+  </div>
+
+  <div class="balance-card">
+    <small>Your CBC Balance</small>
+    <div class="balance" id="balance">0.0000</div>
+    <div class="rate">Mining Rate: 1 CBC / hour</div>
+  </div>
+
+  <div class="mining-card">
+
+    <div class="status" id="status">
+      Mining is not active
+    </div>
+
+    <div class="timer" id="timer">
+      01:00:00
+    </div>
+
+    <button class="mine-btn" id="mineBtn" onclick="startMining()">
+      ⛏️ START MINING
+    </button>
+
+    <button class="claim-btn" id="claimBtn" onclick="claimReward()" disabled>
+      🎁 CLAIM REWARD
+    </button>
+
+  </div>
+
+  <div class="stats">
+
+    <div class="stat">
+      <strong id="totalMined">0.0000</strong>
+      Total Mined
+    </div>
+
+    <div class="stat">
+      <strong id="referrals">0</strong>
+      Referrals
+    </div>
+
+  </div>
+
+  <div class="referral">
+
+    <h3>👥 Invite Friends</h3>
+
+    <p>
+      Invite friends and earn CBC referral rewards.
+    </p>
+
+    <div class="ref-link" id="refLink">
+      CBC referral link
+    </div>
+
+    <button class="copy-btn" onclick="copyReferral()">
+      📋 COPY REFERRAL LINK
+    </button>
+
+  </div>
+
+  <div class="footer">
+    CBC Mining © 2026
+  </div>
+
+</div>
+
+<script>
+
+let balance = parseFloat(localStorage.getItem("cbcBalance")) || 0;
+let totalMined = parseFloat(localStorage.getItem("cbcTotal")) || 0;
+
+let miningStart = localStorage.getItem("cbcMiningStart");
+let miningActive = miningStart ? true : false;
+
+const miningDuration = 60 * 60 * 1000; // 1 hour
+const reward = 1;
+
+function saveData() {
+  localStorage.setItem("cbcBalance", balance);
+  localStorage.setItem("cbcTotal", totalMined);
+}
+
+function updateDisplay() {
+
+  document.getElementById("balance").innerText =
+    balance.toFixed(4);
+
+  document.getElementById("totalMined").innerText =
+    totalMined.toFixed(4);
+
+  if (miningActive) {
+
+    document.getElementById("status").innerText =
+      "⛏️ Mining in progress...";
+
+    document.getElementById("mineBtn").disabled = true;
+
+  } else {
+
+    document.getElementById("status").innerText =
+      "Mining is not active";
+
+    document.getElementById("mineBtn").disabled = false;
+  }
+}
+
+function startMining() {
+
+  miningStart = Date.now();
+
+  localStorage.setItem(
+    "cbcMiningStart",
+    miningStart
+  );
+
+  miningActive = true;
+
+  updateDisplay();
+}
+
+function claimReward() {
+
+  if (!miningStart) return;
+
+  const elapsed = Date.now() - parseInt(miningStart);
+
+  if (elapsed >= miningDuration) {
+
+    balance += reward;
+    totalMined += reward;
+
+    localStorage.removeItem("cbcMiningStart");
+
+    miningStart = null;
+    miningActive = false;
+
+    saveData();
+
+    alert("🎉 You received 1 CBC!");
+
+    updateDisplay();
+
+  } else {
+
+    alert("⏳ Mining is not finished yet.");
+  }
+}
+
+function updateTimer() {
+
+  const timer = document.getElementById("timer");
+  const claimBtn = document.getElementById("claimBtn");
+
+  if (!miningStart) {
+
+    timer.innerText = "01:00:00";
+    claimBtn.disabled = true;
+    return;
+  }
+
+  const elapsed = Date.now() - parseInt(miningStart);
+  const remaining = miningDuration - elapsed;
+
+  if (remaining <= 0) {
+
+    timer.innerText = "00:00:00";
+    claimBtn.disabled = false;
+
+    document.getElementById("status").innerText =
+      "🎉 Mining complete!";
+
+    return;
+  }
+
+  const hours =
+    Math.floor(remaining / 3600000);
+
+  const minutes =
+    Math.floor((remaining % 3600000) / 60000);
+
+  const seconds =
+    Math.floor((remaining % 60000) / 1000);
+
+  timer.innerText =
+    String(hours).padStart(2,"0") + ":" +
+    String(minutes).padStart(2,"0") + ":" +
+    String(seconds).padStart(2,"0");
+
+  claimBtn.disabled = true;
+}
+
+function copyReferral() {
+
+  const link =
+    document.getElementById("refLink").innerText;
+
+  navigator.clipboard.writeText(link);
+
+  alert("Referral link copied!");
+}
+
+document.getElementById("refLink").innerText =
+  "https://t.me/CBCMiningBot?start=ref";
+
+updateDisplay();
+
+setInterval(updateTimer, 1000);
+
+updateTimer();
+
+</script>
+
+</body>
+</html>
